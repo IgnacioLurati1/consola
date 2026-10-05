@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<!--
+  Qué puede hacer esta página, y nada más. Va primero para que cubra todo lo que sigue.
+  - Scripts y estilos solo de este mismo sitio: nada escrito adentro del HTML, así que un
+    texto que llegara a colarse como HTML no puede correr código.
+  - Conexiones solo a la API de GitHub (el repositorio de datos del control) y a los
+    servidores de los turneros. Un turnero con dominio propio para su servidor se agrega a
+    connect-src acá, o la consola no le puede hablar. localhost:3000 es el backend local.
+  Ver README, "Seguridad del control".
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.github.com https://*.up.railway.app http://localhost:3000; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Consola</title>
+<link rel="stylesheet" href="consola.css">
+<link rel="stylesheet" href="control.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap ancho cabecera">
+    <h1>Consola</h1>
+    <div class="pestañas" role="tablist" aria-label="Secciones de la consola">
+      <button type="button" role="tab" id="tab-instalaciones" aria-controls="area-instalaciones" aria-selected="true">Instalaciones</button>
+      <button type="button" role="tab" id="tab-control" aria-controls="area-control" aria-selected="false" tabindex="-1">Control</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     Instalaciones. Lo de siempre, sin cambios.
+     ============================================================ -->
+<div class="wrap" id="area-instalaciones" role="tabpanel" aria-labelledby="tab-instalaciones">
+
+<p class="intro">Crea el administrador de un consultorio y fija sus reglas de funcionamiento. Es la única página habilitada para hacerlo.</p>
+
+<!-- Paso 1: a qué instalación. Una sola consola, un backend por consultorio. -->
+<section class="card" id="paso-destino">
+  <h2>Instalación</h2>
+  <p class="hint">La dirección del servidor del consultorio. Queda guardada en este navegador.</p>
+  <label for="api">Servidor</label>
+  <input id="api" class="mono" type="url" inputmode="url" placeholder="https://api.ejemplo.com" autocomplete="off">
+  <button id="btn-destino" type="button">Continuar</button>
+</section>
+
+<!-- Paso 2: entrar. Credenciales de siempre, token distinto. -->
+<section class="card" id="paso-login" hidden>
+  <h2>Entrar</h2>
+  <p class="hint">La cuenta tiene que estar en la lista de la instalación. La sesión dura treinta minutos y no se renueva.</p>
+  <label for="email">Correo</label>
+  <input id="email" type="email" autocomplete="username" spellcheck="false">
+  <label for="pass">Contraseña</label>
+  <input id="pass" type="password" autocomplete="current-password">
+  <button id="btn-login" type="button">Entrar</button>
+  <button id="btn-volver" class="ghost" type="button">Cambiar de instalación</button>
+  <div id="msg-login"></div>
+</section>
+
+<!-- Paso 3: lo que hay y lo que se agrega. -->
+<section class="card" id="paso-estado" hidden>
+  <div class="who">
+    <span class="inst" id="inst"></span>
+    <span class="acct" id="acct"></span>
+  </div>
+  <div id="aviso-transicion"></div>
+  <table id="tabla-admins"><thead><tr><th>Administrador</th><th>Estado</th></tr></thead><tbody></tbody></table>
+  <button id="btn-salir" class="ghost" type="button">Cerrar la sesión</button>
+</section>
+
+<section class="card" id="paso-crear" hidden>
+  <h2>Crear un administrador</h2>
+  <p class="hint">No se elige la contraseña: le llega un mail para que elija la suya. Tu contraseña se vuelve a pedir acá porque un token robado no tiene que alcanzar.</p>
+  <label for="n-email">Correo</label>
+  <input id="n-email" type="email" autocomplete="off" spellcheck="false">
+  <label for="n-name">Nombre</label>
+  <input id="n-name" type="text" autocomplete="off">
+  <label for="n-surname">Apellido</label>
+  <input id="n-surname" type="text" autocomplete="off">
+  <label for="n-pass">Tu contraseña, otra vez</label>
+  <input id="n-pass" type="password" autocomplete="current-password">
+  <button id="btn-crear" type="button">Crear el administrador</button>
+  <div id="msg-crear"></div>
+</section>
+
+<section class="card" id="paso-reglas" hidden>
+  <h2>Reglas de funcionamiento</h2>
+  <p class="hint">Cómo funciona el turnero de esta instalación. Las que tienen candado el consultorio no las puede cambiar desde su panel. Las marcadas "solo consola" ni siquiera las ve.</p>
+  <div class="presets" id="presets"></div>
+  <div id="reglas"></div>
+  <button id="btn-reglas" type="button">Guardar las reglas</button>
+  <div id="msg-reglas"></div>
+</section>
+
+<footer>
+  El servidor del consultorio solo acepta esta página, y solo para estas llamadas. Cada intento, el que entra y el que no, queda escrito en el log de la plataforma.
+</footer>
+
+</div>
+
+<!-- ============================================================
+     Control. Estado de las páginas, gastos, clientes, tickets y notas.
+     No entra a ningún turnero: todo sale del repositorio privado de datos, por la API de
+     GitHub, salvo la consulta en vivo a la ruta de salud de cada turnero, que es pública.
+     ============================================================ -->
+<div class="wrap ancho control" id="area-control" role="tabpanel" aria-labelledby="tab-control" hidden>
+
+<p class="intro">Estado de las páginas, gastos de Railway, clientes, tickets y notas.</p>
+
+<section class="card angosta" id="c-conexion">
+  <h2>Repositorio de datos</h2>
+  <p class="hint">El token queda solo en esta pestaña y se borra al cerrarla.</p>
+  <label for="c-repo">Repositorio</label>
+  <input id="c-repo" class="mono" type="text" placeholder="usuario/control-datos" autocomplete="off" spellcheck="false">
+  <label for="c-token">Token de GitHub</label>
+  <input id="c-token" class="mono" type="password" autocomplete="off" spellcheck="false">
+  <button id="c-conectar" type="button">Conectar</button>
+  <div id="c-msg-conexion"></div>
+</section>
+
+<div id="c-panel" hidden>
+  <div class="c-barra">
+    <span class="c-repo mono" id="c-repo-nombre"></span>
+    <div class="c-vistas" role="tablist" aria-label="Vistas del control">
+      <button type="button" role="tab" data-vista="estado" aria-selected="true">Estado</button>
+      <button type="button" role="tab" data-vista="railway" aria-selected="false" tabindex="-1">Railway</button>
+      <button type="button" role="tab" data-vista="clientes" aria-selected="false" tabindex="-1">Clientes</button>
+      <button type="button" role="tab" data-vista="tickets" aria-selected="false" tabindex="-1">Tickets</button>
+      <button type="button" role="tab" data-vista="notas" aria-selected="false" tabindex="-1">Notas</button>
+    </div>
+    <button type="button" class="ghost chico" id="c-desconectar">Desconectar</button>
+  </div>
+  <div id="c-aviso"></div>
+  <div id="c-hecho" role="status"></div>
+
+  <!-- Estado -->
+  <section class="vista" id="v-estado" role="tabpanel">
+    <div class="c-cabecera">
+      <div>
+        <h2>Estado</h2>
+        <p class="hint" id="e-generado">Sin chequeos todavía</p>
+      </div>
+      <div class="acciones">
+        <button type="button" class="ghost chico" id="e-actualizar">Actualizar</button>
+        <button type="button" class="chico" id="e-chequear">Chequear ahora</button>
+      </div>
+    </div>
+    <div id="e-msg" role="status"></div>
+    <div id="e-incidentes"></div>
+    <div id="e-sitios" class="grilla"></div>
+  </section>
+
+  <!-- Railway -->
+  <section class="vista" id="v-railway" role="tabpanel" hidden>
+    <div class="c-cabecera">
+      <div>
+        <h2>Railway</h2>
+        <p class="hint" id="r-consultado">Uso y gasto del período, según el último chequeo.</p>
+      </div>
+    </div>
+    <div id="r-contenido"></div>
+  </section>
+
+  <!-- Clientes -->
+  <section class="vista" id="v-clientes" role="tabpanel" hidden>
+    <div class="c-cabecera">
+      <div>
+        <h2>Clientes</h2>
+        <p class="hint">Los datos de contacto salen de sitios.json.</p>
+      </div>
+    </div>
+    <div id="k-lista" class="grilla"></div>
+  </section>
+
+  <!-- Tickets -->
+  <section class="vista" id="v-tickets" role="tabpanel" hidden>
+    <div class="c-cabecera">
+      <div>
+        <h2>Tickets</h2>
+        <p class="hint">Issues del repositorio con la etiqueta ticket.</p>
+      </div>
+      <div class="acciones">
+        <button type="button" class="chico" id="t-nuevo">Nuevo ticket</button>
+      </div>
+    </div>
+
+    <form class="card formulario" id="t-form" hidden>
+      <h3>Nuevo ticket</h3>
+      <label for="t-titulo">Título</label>
+      <input id="t-titulo" type="text" autocomplete="off" maxlength="200">
+      <div class="fila-campos">
+        <div>
+          <label for="t-cliente">Cliente</label>
+          <select id="t-cliente"></select>
+        </div>
+        <div>
+          <label for="t-prioridad">Prioridad</label>
+          <select id="t-prioridad">
+            <option value="">Sin prioridad</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+      </div>
+      <label for="t-texto">Descripción</label>
+      <textarea id="t-texto" rows="6"></textarea>
+      <div class="acciones">
+        <button type="button" class="ghost chico" id="t-cancelar">Cancelar</button>
+        <button type="submit" class="chico" id="t-crear">Crear ticket</button>
+      </div>
+      <div id="t-msg-form"></div>
+    </form>
+
+    <div class="filtros">
+      <label>Estado
+        <select id="t-f-estado">
+          <option value="open">Abiertos</option>
+          <option value="closed">Cerrados</option>
+          <option value="all">Todos</option>
+        </select>
+      </label>
+      <label>Cliente <select id="t-f-cliente"></select></label>
+      <label>Prioridad
+        <select id="t-f-prioridad">
+          <option value="">Todas</option>
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </label>
+      <label class="crece">Buscar <input id="t-f-texto" type="search" autocomplete="off"></label>
+    </div>
+
+    <div class="dos-columnas">
+      <div id="t-lista" class="lista"></div>
+      <div id="t-detalle" class="card detalle" hidden></div>
+    </div>
+  </section>
+
+  <!-- Notas -->
+  <section class="vista" id="v-notas" role="tabpanel" hidden>
+    <div class="c-cabecera">
+      <div>
+        <h2>Notas</h2>
+        <p class="hint">Relevamientos, análisis y notas por cliente, en la carpeta notas del repositorio.</p>
+      </div>
+      <div class="acciones">
+        <button type="button" class="chico" id="n-nueva">Nueva nota</button>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <label>Cliente <select id="n-f-cliente"></select></label>
+      <label>Tipo
+        <select id="n-f-tipo">
+          <option value="">Todos</option>
+          <option value="relevamiento">Relevamiento</option>
+          <option value="analisis">Análisis</option>
+          <option value="nota">Nota</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="dos-columnas">
+      <div id="n-lista" class="lista"></div>
+      <form id="n-editor" class="card detalle" hidden>
+        <h3 id="n-editor-titulo">Nueva nota</h3>
+        <p class="hint mono" id="n-ruta"></p>
+        <div class="fila-campos">
+          <div>
+            <label for="n-cliente">Cliente</label>
+            <select id="n-cliente"></select>
+          </div>
+          <div>
+            <label for="n-tipo">Tipo</label>
+            <select id="n-tipo">
+              <option value="relevamiento">Relevamiento</option>
+              <option value="analisis">Análisis</option>
+              <option value="nota">Nota</option>
+            </select>
+          </div>
+          <div>
+            <label for="n-fecha">Fecha</label>
+            <input id="n-fecha" type="date">
+          </div>
+        </div>
+        <label for="n-titulo">Título</label>
+        <input id="n-titulo" type="text" autocomplete="off" maxlength="160">
+        <label for="n-texto">Texto</label>
+        <textarea id="n-texto" class="mono" rows="18"></textarea>
+        <div class="acciones">
+          <button type="button" class="ghost chico" id="n-cancelar">Cerrar</button>
+          <button type="submit" class="chico" id="n-guardar">Guardar</button>
+        </div>
+        <div id="n-msg"></div>
+      </form>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<script src="consola.js"></script>
+<script src="control.js"></script>
+</body>
+</html>
