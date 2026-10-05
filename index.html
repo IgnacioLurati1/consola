@@ -18,6 +18,7 @@
 <title>Consola</title>
 <link rel="stylesheet" href="consola.css">
 <link rel="stylesheet" href="control.css">
+<link rel="stylesheet" href="ayuda.css">
 </head>
 <body>
 
@@ -27,12 +28,13 @@
     <div class="pestañas" role="tablist" aria-label="Secciones de la consola">
       <button type="button" role="tab" id="tab-instalaciones" aria-controls="area-instalaciones" aria-selected="true">Instalaciones</button>
       <button type="button" role="tab" id="tab-control" aria-controls="area-control" aria-selected="false" tabindex="-1">Control</button>
+      <button type="button" role="tab" id="tab-ayuda" aria-controls="area-ayuda" aria-selected="false" tabindex="-1">Ayuda</button>
     </div>
   </div>
 </header>
 
 <!-- ============================================================
-     Instalaciones. Lo de siempre, sin cambios.
+     Instalaciones. Lo de siempre, con otra disposición: mismos pasos y mismas llamadas.
      ============================================================ -->
 <div class="wrap" id="area-instalaciones" role="tabpanel" aria-labelledby="tab-instalaciones">
 
@@ -60,39 +62,59 @@
   <div id="msg-login"></div>
 </section>
 
-<!-- Paso 3: lo que hay y lo que se agrega. -->
+<!-- Paso 3: lo que hay y lo que se agrega. En pantalla ancha, uno al lado del otro. -->
+<div class="i-sesion">
 <section class="card" id="paso-estado" hidden>
   <div class="who">
-    <span class="inst" id="inst"></span>
-    <span class="acct" id="acct"></span>
+    <div>
+      <span class="inst" id="inst"></span>
+      <span class="acct" id="acct"></span>
+    </div>
+    <button id="btn-salir" class="ghost chico" type="button">Cerrar la sesión</button>
   </div>
   <div id="aviso-transicion"></div>
   <table id="tabla-admins"><thead><tr><th>Administrador</th><th>Estado</th></tr></thead><tbody></tbody></table>
-  <button id="btn-salir" class="ghost" type="button">Cerrar la sesión</button>
 </section>
 
 <section class="card" id="paso-crear" hidden>
   <h2>Crear un administrador</h2>
-  <p class="hint">No se elige la contraseña: le llega un mail para que elija la suya. Tu contraseña se vuelve a pedir acá porque un token robado no tiene que alcanzar.</p>
-  <label for="n-email">Correo</label>
-  <input id="n-email" type="email" autocomplete="off" spellcheck="false">
-  <label for="n-name">Nombre</label>
-  <input id="n-name" type="text" autocomplete="off">
-  <label for="n-surname">Apellido</label>
-  <input id="n-surname" type="text" autocomplete="off">
-  <label for="n-pass">Tu contraseña, otra vez</label>
-  <input id="n-pass" type="password" autocomplete="current-password">
-  <button id="btn-crear" type="button">Crear el administrador</button>
+  <p class="hint">No se elige la contraseña. Le llega un mail para que elija la suya. Tu contraseña se vuelve a pedir acá porque un token robado no tiene que alcanzar.</p>
+  <div class="campos">
+    <div class="entero">
+      <label for="n-email">Correo</label>
+      <input id="n-email" type="email" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="n-name">Nombre</label>
+      <input id="n-name" type="text" autocomplete="off">
+    </div>
+    <div>
+      <label for="n-surname">Apellido</label>
+      <input id="n-surname" type="text" autocomplete="off">
+    </div>
+    <div>
+      <label for="n-pass">Tu contraseña, otra vez</label>
+      <input id="n-pass" type="password" autocomplete="current-password">
+    </div>
+    <div class="al-pie">
+      <button id="btn-crear" type="button">Crear el administrador</button>
+    </div>
+  </div>
   <div id="msg-crear"></div>
 </section>
+</div>
 
 <section class="card" id="paso-reglas" hidden>
   <h2>Reglas de funcionamiento</h2>
   <p class="hint">Cómo funciona el turnero de esta instalación. Las que tienen candado el consultorio no las puede cambiar desde su panel. Las marcadas "solo consola" ni siquiera las ve.</p>
+  <h3 class="rotulo-chico" id="presets-titulo">Puntos de partida</h3>
   <div class="presets" id="presets"></div>
   <div id="reglas"></div>
-  <button id="btn-reglas" type="button">Guardar las reglas</button>
-  <div id="msg-reglas"></div>
+  <!-- Fijo abajo mientras se recorren las reglas, para no tener que bajar hasta el final. -->
+  <div class="reglas-pie">
+    <button id="btn-reglas" type="button">Guardar las reglas</button>
+    <div id="msg-reglas"></div>
+  </div>
 </section>
 
 <footer>
@@ -102,13 +124,14 @@
 </div>
 
 <!-- ============================================================
-     Control. Estado de las páginas, gastos, clientes, tickets y notas.
-     No entra a ningún turnero: todo sale del repositorio privado de datos, por la API de
-     GitHub, salvo la consulta en vivo a la ruta de salud de cada turnero, que es pública.
+     Control. Estado de las páginas, corridas, incidentes, gastos, clientes, tickets, notas
+     y ajustes. No entra a ningún turnero: todo sale del repositorio privado de datos, por la
+     API de GitHub, salvo la consulta en vivo a la ruta de salud de cada turnero, que es
+     pública.
      ============================================================ -->
 <div class="wrap ancho control" id="area-control" role="tabpanel" aria-labelledby="tab-control" hidden>
 
-<p class="intro">Estado de las páginas, gastos de Railway, clientes, tickets y notas.</p>
+<p class="intro">Estado de las páginas, incidentes, gastos de Railway, clientes, tickets, notas y ajustes del control.</p>
 
 <section class="card angosta" id="c-conexion">
   <h2>Repositorio de datos</h2>
@@ -130,10 +153,14 @@
       <button type="button" role="tab" data-vista="clientes" aria-selected="false" tabindex="-1">Clientes</button>
       <button type="button" role="tab" data-vista="tickets" aria-selected="false" tabindex="-1">Tickets</button>
       <button type="button" role="tab" data-vista="notas" aria-selected="false" tabindex="-1">Notas</button>
+      <button type="button" role="tab" data-vista="ajustes" aria-selected="false" tabindex="-1">Ajustes</button>
     </div>
     <button type="button" class="ghost chico" id="c-desconectar">Desconectar</button>
   </div>
   <div id="c-aviso"></div>
+  <!-- El resumen va arriba de todas las vistas: todo en orden, o cuántos problemas y cuáles. -->
+  <div id="c-resumen" aria-live="polite"></div>
+  <!-- Los "listo" aparecen abajo y fijos, para que se vean aunque la página esté corrida. -->
   <div id="c-hecho" role="status"></div>
 
   <!-- Estado -->
@@ -148,9 +175,16 @@
         <button type="button" class="chico" id="e-chequear">Chequear ahora</button>
       </div>
     </div>
+    <div id="e-progreso" role="status"></div>
     <div id="e-msg" role="status"></div>
-    <div id="e-incidentes"></div>
-    <div id="e-sitios" class="grilla"></div>
+    <div id="e-incidentes" class="bloque"></div>
+    <div class="bloque">
+      <div class="bloque-cabeza">
+        <h3>Sitios</h3>
+      </div>
+      <div id="e-sitios" class="grilla"></div>
+    </div>
+    <div id="e-corridas" class="bloque"></div>
   </section>
 
   <!-- Railway -->
@@ -169,9 +203,90 @@
     <div class="c-cabecera">
       <div>
         <h2>Clientes</h2>
-        <p class="hint">Los datos de contacto salen de sitios.json.</p>
+        <p class="hint">Cada cliente es un sitio de sitios.json, con su contacto.</p>
+      </div>
+      <div class="acciones">
+        <button type="button" class="chico" id="k-nuevo">Nuevo sitio</button>
       </div>
     </div>
+
+    <form class="card formulario" id="k-editor" hidden novalidate>
+      <h3 id="k-editor-titulo">Nuevo sitio</h3>
+      <p class="hint">Se guarda en sitios.json con un commit. El chequeo lo toma en la próxima corrida.</p>
+      <fieldset>
+        <legend>Sitio</legend>
+        <div class="fila-campos">
+          <div>
+            <label for="k-nombre">Nombre</label>
+            <input id="k-nombre" type="text" autocomplete="off" maxlength="80">
+          </div>
+          <div>
+            <label for="k-tipo">Tipo</label>
+            <select id="k-tipo">
+              <option value="turnero">Turnero</option>
+              <option value="web">Web</option>
+            </select>
+          </div>
+        </div>
+        <label for="k-id">Id</label>
+        <input id="k-id" class="mono" type="text" autocomplete="off" spellcheck="false" maxlength="63" aria-describedby="k-id-ayuda">
+        <p class="ayuda" id="k-id-ayuda">Minúsculas, números y guiones. No se cambia después, porque es la etiqueta de los tickets y la carpeta de las notas.</p>
+        <label for="k-front">Página</label>
+        <input id="k-front" class="mono" type="url" inputmode="url" placeholder="https://ejemplo.com.ar/" autocomplete="off" spellcheck="false">
+        <div id="k-api-campo">
+          <label for="k-api">Servidor</label>
+          <input id="k-api" class="mono" type="url" inputmode="url" placeholder="https://nombre-production.up.railway.app/api" autocomplete="off" spellcheck="false" aria-describedby="k-api-ayuda">
+          <p class="ayuda" id="k-api-ayuda">La base del servidor, terminada en /api.</p>
+        </div>
+        <label for="k-marcador">Texto que tiene que aparecer en la página</label>
+        <input id="k-marcador" type="text" autocomplete="off" maxlength="200" aria-describedby="k-marcador-ayuda">
+        <p class="ayuda" id="k-marcador-ayuda">Si falta, el chequeo da falla. Sirve para notar una página en blanco. Vacío, no se mira.</p>
+        <label for="k-proyecto">Proyecto de Railway</label>
+        <select id="k-proyecto"></select>
+        <input id="k-proyecto-otro" class="mono" type="text" autocomplete="off" spellcheck="false" placeholder="Id del proyecto" aria-label="Id del proyecto de Railway" hidden>
+      </fieldset>
+      <fieldset>
+        <legend>Contacto</legend>
+        <div class="fila-campos">
+          <div>
+            <label for="k-c-nombre">Nombre</label>
+            <input id="k-c-nombre" type="text" autocomplete="off" maxlength="120">
+          </div>
+          <div>
+            <label for="k-c-email">Mail</label>
+            <input id="k-c-email" type="email" autocomplete="off" spellcheck="false" maxlength="200">
+          </div>
+        </div>
+        <div class="fila-campos">
+          <div>
+            <label for="k-c-telefono">Teléfono</label>
+            <input id="k-c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="341 555 0000" maxlength="30">
+          </div>
+          <div>
+            <label for="k-c-whatsapp">WhatsApp</label>
+            <input id="k-c-whatsapp" type="tel" inputmode="numeric" autocomplete="off" placeholder="549 341 555 0000" maxlength="30" aria-describedby="k-c-whatsapp-ayuda">
+            <p class="ayuda" id="k-c-whatsapp-ayuda">Con código de país. Solo números y espacios.</p>
+          </div>
+        </div>
+        <label for="k-c-notas">Notas</label>
+        <textarea id="k-c-notas" rows="3" maxlength="2000"></textarea>
+      </fieldset>
+      <div class="acciones separadas">
+        <button type="button" class="ghost chico peligro" id="k-borrar" hidden>Borrar sitio</button>
+        <span class="crece"></span>
+        <button type="button" class="ghost chico" id="k-cancelar">Cancelar</button>
+        <button type="submit" class="chico" id="k-guardar">Guardar</button>
+      </div>
+      <div class="confirmar" id="k-confirmar" hidden>
+        <p id="k-confirmar-texto"></p>
+        <div class="acciones">
+          <button type="button" class="ghost chico" id="k-confirmar-no">No borrar</button>
+          <button type="button" class="chico peligro lleno" id="k-confirmar-si">Borrar</button>
+        </div>
+      </div>
+      <div id="k-msg" role="status"></div>
+    </form>
+
     <div id="k-lista" class="grilla"></div>
   </section>
 
@@ -300,8 +415,166 @@
       </form>
     </div>
   </section>
+
+  <!-- Ajustes -->
+  <section class="vista" id="v-ajustes" role="tabpanel" hidden>
+    <div class="c-cabecera">
+      <div>
+        <h2>Ajustes</h2>
+        <p class="hint">Cuándo algo es un aviso o una falla, y a quién se avisa. Se guardan en sitios.json.</p>
+      </div>
+    </div>
+    <div class="grilla dos">
+      <form class="card formulario" id="a-form" novalidate>
+        <h3>Umbrales</h3>
+        <div class="fila-campos">
+          <div>
+            <label for="a-lento">Lento a partir de</label>
+            <div class="con-unidad"><input id="a-lento" type="text" inputmode="numeric" autocomplete="off"><span>ms</span></div>
+          </div>
+          <div>
+            <label for="a-cert-aviso">Aviso de certificado</label>
+            <div class="con-unidad"><input id="a-cert-aviso" type="text" inputmode="numeric" autocomplete="off"><span>días antes</span></div>
+          </div>
+          <div>
+            <label for="a-cert-falla">Falla de certificado</label>
+            <div class="con-unidad"><input id="a-cert-falla" type="text" inputmode="numeric" autocomplete="off"><span>días antes</span></div>
+          </div>
+        </div>
+        <p class="ayuda">Una página o un servidor que tarda más que eso da aviso. Pasados los 15 segundos ya es falla.</p>
+        <h3 class="separado">Avisos</h3>
+        <label for="a-avisar">Usuarios de GitHub a mencionar</label>
+        <input id="a-avisar" class="mono" type="text" autocomplete="off" spellcheck="false" aria-describedby="a-avisar-ayuda">
+        <p class="ayuda" id="a-avisar-ayuda">Separados por coma. Cada incidente los menciona, y la mención notifica aunque se deje de mirar el repositorio.</p>
+        <div class="acciones">
+          <button type="submit" class="chico" id="a-guardar">Guardar</button>
+        </div>
+        <div id="a-msg" role="status"></div>
+      </form>
+      <section class="card" id="a-github"></section>
+    </div>
+  </section>
 </div>
 
+</div>
+
+<!-- ============================================================
+     Ayuda. Un recorrido corto por todo lo que hace la consola. Las capturas son de datos de
+     ejemplo (ningún cliente real) y se rearman con el harness del tutorial.
+     ============================================================ -->
+<div class="wrap ancho guia" id="area-ayuda" role="tabpanel" aria-labelledby="tab-ayuda" hidden>
+
+<nav class="guia-indice" aria-label="Temas de la ayuda">
+  <p class="guia-indice-titulo">Temas</p>
+  <ul>
+    <li><a href="#g-conectar">Entrar a Control</a></li>
+    <li><a href="#g-estado">El estado</a></li>
+    <li><a href="#g-nuevo">Un proyecto nuevo</a></li>
+    <li><a href="#g-editar">Editar o borrar</a></li>
+    <li><a href="#g-railway">Railway</a></li>
+    <li><a href="#g-tickets">Tickets y notas</a></li>
+    <li><a href="#g-ajustes">Ajustes</a></li>
+    <li><a href="#g-instalaciones">Instalaciones</a></li>
+  </ul>
+</nav>
+
+<div class="guia-cuerpo">
+
+<p class="guia-intro">Instalaciones crea los administradores de cada turnero y fija sus reglas. Control mira todas las páginas, el gasto de Railway y el trabajo con cada cliente. Las capturas son de ejemplo.</p>
+
+<section class="guia-tema" id="g-conectar">
+  <h2>Entrar a Control</h2>
+  <p>Control lee y guarda todo en el repositorio privado control-datos, con un token de GitHub que solo ve ese repositorio.</p>
+  <ol>
+    <li>En GitHub, <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">crear un token de grano fino</a>.</li>
+    <li>En Repository access, elegir Only select repositories y marcar control-datos.</li>
+    <li>En Permissions, poner Contents, Issues y Actions en Read and write. Vence a los 90 días.</li>
+    <li>Copiar el token, pegarlo en Token de GitHub y tocar Conectar.</li>
+  </ol>
+  <figure><a href="ayuda/t04-control-conectar.png" target="_blank"><img src="ayuda/t04-control-conectar.png" width="652" height="344" loading="lazy" alt="La tarjeta Repositorio de datos, con el repositorio y el token cargados y el botón Conectar"></a></figure>
+  <p class="guia-nota">El token queda solo en esa pestaña del navegador. Al cerrarla se pega de nuevo, así que conviene tenerlo en el gestor de contraseñas.</p>
+</section>
+
+<section class="guia-tema" id="g-estado">
+  <h2>El estado</h2>
+  <p>Arriba de todo, el resumen dice si está todo en orden o qué anda mal, y cada problema tiene un Ver que lleva a donde se mira.</p>
+  <ul>
+    <li>Cada tarjeta es un sitio, con las últimas 24 horas en barras y el resultado de cada control. El nombre abre la página.</li>
+    <li>Un incidente se abre solo cuando algo falla, llega por mail y se cierra solo cuando se arregla. Desde acá se comenta, se cierra o se reabre.</li>
+    <li>Abajo están las últimas corridas del chequeo. En una fallida, Qué falló dice en qué paso.</li>
+  </ul>
+  <figure><a href="ayuda/t05-estado.png" target="_blank"><img src="ayuda/t05-estado.png" width="1112" height="1058" loading="lazy" alt="La vista Estado con el resumen, dos incidentes abiertos y las tarjetas de tres sitios"></a></figure>
+  <p>El chequeo corre solo cada media hora. Chequear ahora lo corre en el momento y muestra en qué paso va.</p>
+  <figure><a href="ayuda/t06-chequear-ahora.png" target="_blank"><img src="ayuda/t06-chequear-ahora.png" width="1112" height="259" loading="lazy" alt="Un chequeo en curso, con los pasos pedido, en cola, en curso y terminado"></a></figure>
+</section>
+
+<section class="guia-tema" id="g-nuevo">
+  <h2>Un proyecto nuevo</h2>
+  <p>Los proyectos no se suman solos. Cada página que se quiere mirar se carga una vez.</p>
+  <ol>
+    <li>En Clientes, tocar Nuevo sitio.</li>
+    <li>Elegir el tipo. Turnero si tiene servidor propio, y se miran la página, el servidor, la base y las tareas. Web si es solo una página, y se miran la página y el certificado.</li>
+    <li>Completar la página y, en un turnero, el servidor terminado en /api. El id sale del nombre y después no se cambia.</li>
+    <li>Si está en Railway, elegir su proyecto. Cargar el contacto y tocar Guardar.</li>
+  </ol>
+  <figure><a href="ayuda/t08-nuevo-sitio.png" target="_blank"><img src="ayuda/t08-nuevo-sitio.png" width="1112" height="1171" loading="lazy" alt="El formulario Nuevo sitio con los datos de un turnero y su contacto"></a></figure>
+  <p>Entra en el próximo chequeo, o enseguida con Chequear ahora. Un proyecto de Railway que ningún sitio usa aparece en la vista Railway con Agregar como sitio, que abre el mismo formulario con el proyecto ya elegido.</p>
+  <figure><a href="ayuda/t10-agregar-como-sitio.png" target="_blank"><img src="ayuda/t10-agregar-como-sitio.png" width="1112" height="178" loading="lazy" alt="Un proyecto de Railway sin sitio, con el botón Agregar como sitio"></a></figure>
+  <div class="guia-recuadro">
+    <p><strong>Un turnero nuevo</strong> necesita además, en las variables de su servidor en Railway, <code>CONSOLE_ORIGIN</code> con la dirección de esta consola sin la ruta, <code>OWNER_EMAILS</code> con las cuentas que pueden entrar a Instalaciones y su propia <code>CONSOLE_JWT_SECRET</code>.</p>
+    <p>Si el token de Railway es de un solo proyecto, el gasto del nuevo no se ve. Hace falta un token de cuenta, y en la vista Railway, Cómo se cambia tiene los pasos.</p>
+  </div>
+</section>
+
+<section class="guia-tema" id="g-editar">
+  <h2>Editar o borrar</h2>
+  <p>En Clientes, cada tarjeta tiene Editar. Ahí se cambian los datos del sitio y del contacto, y abajo está Borrar sitio, que pide confirmación. Nuevo ticket y Nueva nota abren con ese cliente ya elegido.</p>
+  <figure><a href="ayuda/t07-clientes.png" target="_blank"><img src="ayuda/t07-clientes.png" width="1112" height="548" loading="lazy" alt="Las tarjetas de clientes con sus tickets, sus notas y los botones Editar, Nuevo ticket y Nueva nota"></a></figure>
+  <p class="guia-nota">Cada cambio queda como un commit en control-datos. En Ajustes, Ver el historial muestra qué cambió y cuándo, por si hay que volver atrás.</p>
+</section>
+
+<section class="guia-tema" id="g-railway">
+  <h2>Railway</h2>
+  <ul>
+    <li>El uso del período y el estimado al cierre del mes, por proyecto.</li>
+    <li>El presupuesto mensual. Si el estimado lo pasa, se abre un incidente.</li>
+    <li>Cambiar, al lado de cada proyecto, elige a qué sitio corresponde.</li>
+    <li>El token de Railway se cambia en los secretos del repositorio. Cómo se cambia, en la tarjeta del token, tiene los pasos.</li>
+  </ul>
+  <figure><a href="ayuda/t09-railway.png" target="_blank"><img src="ayuda/t09-railway.png" width="1112" height="866" loading="lazy" alt="La vista Railway con el token en uso, el presupuesto, el gasto por día y el proyecto con su sitio"></a></figure>
+</section>
+
+<section class="guia-tema" id="g-tickets">
+  <h2>Tickets y notas</h2>
+  <p>Los tickets son lo pendiente con cada cliente, con prioridad. Se crean, se comentan, se cierran y se reabren desde acá, y se filtran por cliente, estado o prioridad.</p>
+  <figure><a href="ayuda/t11-tickets.png" target="_blank"><img src="ayuda/t11-tickets.png" width="1112" height="720" loading="lazy" alt="La vista Tickets con la lista y el detalle de un ticket con sus comentarios"></a></figure>
+  <p>Las notas guardan relevamientos, análisis y notas sueltas de cada cliente. Nueva nota, elegir cliente y tipo, escribir y Guardar.</p>
+  <figure><a href="ayuda/t12-notas.png" target="_blank"><img src="ayuda/t12-notas.png" width="1112" height="620" loading="lazy" alt="La vista Notas con la lista y una nota abierta para editar"></a></figure>
+</section>
+
+<section class="guia-tema" id="g-ajustes">
+  <h2>Ajustes</h2>
+  <p>Cuándo una página lenta o un certificado por vencer pasa a aviso o a falla, y qué usuarios de GitHub reciben el mail de cada incidente. Al lado está lo que solo se hace en GitHub, con sus enlaces.</p>
+</section>
+
+<section class="guia-tema" id="g-instalaciones">
+  <h2>Instalaciones</h2>
+  <ol>
+    <li>Pegar la dirección del servidor del turnero, la que termina en up.railway.app, y tocar Continuar.</li>
+    <li>Entrar con una cuenta de dueño de esa instalación, una de las de <code>OWNER_EMAILS</code>.</li>
+  </ol>
+  <figure><a href="ayuda/t01-instalaciones-servidor.png" target="_blank"><img src="ayuda/t01-instalaciones-servidor.png" width="652" height="391" loading="lazy" alt="El primer paso de Instalaciones, con la dirección del servidor cargada"></a></figure>
+  <ol start="3">
+    <li>Para crear un administrador, cargar correo, nombre y apellido, y la contraseña propia otra vez. Al nuevo le llega un mail para elegir la suya, y hasta entonces figura sin contraseña.</li>
+  </ol>
+  <figure><a href="ayuda/t02-instalaciones-admin.png" target="_blank"><img src="ayuda/t02-instalaciones-admin.png" width="1112" height="410" loading="lazy" alt="La lista de administradores y el formulario Crear un administrador"></a></figure>
+  <ol start="4">
+    <li>Las reglas arrancan de un punto de partida, que carga todas de una vez, y después se ajusta cada una. Con candado, el consultorio no la cambia desde su panel. Las de solo consola ni las ve. Al final, Guardar las reglas.</li>
+  </ol>
+  <figure><a href="ayuda/t03-instalaciones-reglas.png" target="_blank"><img src="ayuda/t03-instalaciones-reglas.png" width="1112" height="640" loading="lazy" alt="Las reglas de funcionamiento con los puntos de partida y los candados"></a></figure>
+</section>
+
+</div>
 </div>
 
 <script src="consola.js"></script>

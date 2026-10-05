@@ -1,0 +1,41 @@
+/* La ayuda: un índice fijo a la izquierda y el recorrido a la derecha, con las capturas al
+   ancho del texto. En el teléfono el índice pasa arriba, en una fila que se corta. */
+.guia{display:grid;grid-template-columns:190px minmax(0,1fr);gap:36px;align-items:start;padding-top:8px}
+
+.guia-indice{position:sticky;top:20px;margin-top:22px}
+.guia-indice-titulo{margin:0 0 8px;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.guia-indice ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line-2)}
+.guia-indice a{display:block;padding:5px 0 5px 14px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;font-size:.9rem}
+.guia-indice a:hover{color:var(--ink);border-left-color:var(--line-2)}
+.guia-indice a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+.guia-cuerpo{max-width:760px}
+.guia-intro{margin:22px 0 0;color:var(--muted);font-size:.95rem}
+
+.guia-tema{padding:30px 0 6px;border-bottom:1px solid var(--line);scroll-margin-top:16px}
+.guia-tema:last-child{border-bottom:0}
+.guia-tema h2{margin:0 0 10px;font-size:1.12rem;letter-spacing:-.005em}
+.guia-tema p,.guia-tema li{font-size:.94rem}
+.guia-tema p{margin:10px 0}
+.guia-tema ol,.guia-tema ul{margin:10px 0;padding-left:22px}
+.guia-tema li{margin:6px 0}
+.guia-tema li::marker{color:var(--muted)}
+.guia-tema a{color:var(--accent)}
+.guia-tema code{font-family:var(--mono);font-size:.84rem;background:var(--sunk);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+
+.guia-tema figure{margin:16px 0 18px}
+.guia-tema figure a{display:block;border-radius:10px}
+.guia-tema figure a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.guia-tema figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line-2);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+
+.guia-nota{color:var(--muted)}
+.guia-recuadro{margin:16px 0 8px;padding:4px 16px;background:var(--accent-bg);border:1px solid var(--line-2);border-left:3px solid var(--accent);border-radius:8px}
+
+@media (max-width:820px){
+  .guia{grid-template-columns:minmax(0,1fr);gap:0}
+  .guia-indice{position:static;margin-top:16px}
+  .guia-indice ul{display:flex;flex-wrap:wrap;gap:6px;border-left:0}
+  .guia-indice a{padding:5px 11px;margin:0;border:1px solid var(--line-2);border-radius:999px;font-size:.84rem}
+  .guia-indice a:hover{border-color:var(--accent)}
+  .guia-tema{padding-top:24px}
+}

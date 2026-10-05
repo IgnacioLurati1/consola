@@ -6,11 +6,12 @@
 :root{
   --bg:#0c0f14; --panel:#141a22; --sunk:#0e141b;
   --ink:#e6ecf3; --muted:#8694a5; --line:#222c38; --line-2:#334151;
-  --accent:#4f9ddb; --accent-ink:#06121c;
-  --ok:#54b98a; --ok-bg:#132419;
-  --warn:#d6a64f; --warn-bg:#262011;
-  --stop:#d9757e; --stop-bg:#241519;
+  --accent:#4f9ddb; --accent-ink:#06121c; --accent-bg:#11222f;
+  --ok:#54b98a; --ok-bg:#132419; --ok-line:#24503a;
+  --warn:#d6a64f; --warn-bg:#262011; --warn-line:#5a4720;
+  --stop:#d9757e; --stop-bg:#241519; --stop-line:#5a2a31;
   --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
+  --ancho:1080px; --angosto:620px;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -19,8 +20,8 @@ body{
   font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
   min-height:100vh;padding:24px 16px 64px;
 }
-.wrap{max-width:620px;margin:0 auto}
-.wrap.ancho{max-width:1080px}
+.wrap{max-width:var(--angosto);margin:0 auto}
+.wrap.ancho{max-width:var(--ancho)}
 
 header{border-bottom:1px solid var(--line-2);padding-bottom:16px}
 h1{margin:0;font-size:1.35rem;letter-spacing:-.01em}
@@ -28,8 +29,10 @@ header p,.intro{margin:7px 0 0;color:var(--muted);font-size:.88rem}
 
 /* Las dos áreas de la consola. Instalaciones es lo de siempre; Control, lo nuevo. */
 .cabecera{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
-/* La cabecera toma el ancho del área que se ve, para que el título quede alineado con ella. */
-body:has(#area-instalaciones:not([hidden])) .cabecera{max-width:620px}
+/* La cabecera toma el ancho del área que se ve, para que el título quede alineado con ella.
+   Instalaciones es angosta hasta entrar; adentro usa el ancho entero. */
+body:has(#area-instalaciones:not([hidden])):has(#paso-estado[hidden]) .cabecera{max-width:var(--angosto)}
+#area-instalaciones:has(#paso-estado:not([hidden])){max-width:var(--ancho)}
 .pestañas{display:flex;gap:4px;background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:3px}
 .pestañas button{
   margin:0;width:auto;background:none;color:var(--muted);border:0;border-radius:7px;
@@ -46,7 +49,7 @@ input{
   width:100%;margin-top:5px;background:var(--sunk);color:var(--ink);
   border:1px solid var(--line-2);border-radius:7px;padding:9px 11px;font:inherit;
 }
-input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 input[readonly]{color:var(--muted)}
 .mono{font-family:var(--mono);font-size:.86rem}
 
@@ -55,6 +58,8 @@ button{
   border:0;border-radius:8px;padding:11px;font:inherit;font-weight:600;cursor:pointer;
 }
 button.ghost{background:none;color:var(--ink);border:1px solid var(--line-2);font-weight:500}
+/* Un botón del tamaño de su texto, para ir en fila con otras cosas. */
+button.chico{width:auto;margin:0;padding:7px 14px;font-size:.88rem}
 button:hover:not(:disabled){filter:brightness(1.08)}
 button:disabled{opacity:.5;cursor:default}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -63,37 +68,120 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .msg.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
 .msg.bad{background:var(--stop-bg);border-color:var(--stop);color:var(--stop)}
 
-.who{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
-.who .inst{font-family:var(--mono);font-size:1rem;color:var(--accent)}
-.who .acct{font-size:.84rem;color:var(--muted)}
+.who{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.who .inst{display:block;font-family:var(--mono);font-size:1rem;color:var(--accent)}
+.who .acct{display:block;font-size:.84rem;color:var(--muted)}
 .sub-nombre{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--muted);font-size:.8rem}
 
 table{width:100%;border-collapse:collapse;margin-top:14px;font-size:.86rem}
 th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line)}
 th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 tr:last-child td{border-bottom:0}
-td.mono{font-family:var(--mono)}
+td.mono{font-family:var(--mono);overflow-wrap:anywhere}
 .pill{font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--sunk);border:1px solid var(--line-2);color:var(--muted)}
 .pill.yo{border-color:var(--accent);color:var(--accent)}
 .pill.sin{border-color:var(--stop);color:var(--stop)}
 
-/* Las reglas: un recuadro por grupo y una fila por regla, con el candado a la derecha. */
-fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 12px 12px;margin:14px 0 0}
+/* Las marcas de cada administrador: en minúscula, del mismo alto y en fila. */
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+#tabla-admins .pill{
+  display:inline-flex;align-items:center;text-transform:none;letter-spacing:0;font-size:.76rem;font-weight:500;
+  line-height:1.3;padding:2px 9px;white-space:nowrap;
+}
+#tabla-admins .pill.yo{background:var(--accent-bg)}
+#tabla-admins .pill.sin{background:var(--stop-bg);border-color:var(--stop-line)}
+#tabla-admins .pill.pendiente{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+#tabla-admins .pill.bien{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+#tabla-admins td{vertical-align:top}
+
+/* Adentro de una instalación: la cuenta y el alta lado a lado, y las reglas debajo. */
+.i-sesion{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(400px,100%),1fr));gap:0 18px;align-items:start}
+.campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.campos .entero{grid-column:1/-1}
+.campos .al-pie{display:flex;align-items:flex-end}
+.campos .al-pie button{margin-top:0}
+
+/* Las reglas: un recuadro por grupo, dos columnas en pantalla ancha, y una fila por regla
+   con el nombre a la izquierda y el control a la derecha, en la misma línea. */
+.rotulo-chico{margin:16px 0 0;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:8px;margin-top:8px}
+.presets button{width:auto;margin:0;text-align:left;font-weight:500;padding:9px 12px;min-width:0}
+.presets .preset-nombre{display:block}
+.presets small{display:block;color:var(--muted);font-size:.78rem;font-weight:400;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#reglas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr));gap:14px;margin-top:16px;align-items:start}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:4px 14px 6px;margin:14px 0 0;min-width:0}
+#reglas fieldset{margin:0}
 legend{padding:0 6px;font-size:.86rem;font-weight:600}
-.regla{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.regla{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .regla:last-child{border-bottom:0}
-.regla label{margin:0;font-weight:500}
-.regla .hint{grid-column:1/-1}
-.regla .campo{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.regla .campo input,.regla .campo select{width:auto;min-width:120px;margin:0}
-.regla .dueño{font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.regla-texto{flex:1 1 150px;min-width:0}
+.regla-texto label{margin:0;font-weight:500;font-size:.88rem;line-height:1.35}
+.regla-texto .hint{margin:2px 0 0;color:var(--muted);font-size:.78rem;line-height:1.4}
+.regla .campo{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex:0 1 auto;margin-left:auto;flex-wrap:wrap}
+.regla .campo input,.regla .campo select{margin:0}
+.regla .campo select{width:auto;max-width:210px;padding:6px 8px;font-size:.86rem}
+.regla .campo input.numero{width:84px;padding:6px 8px}
+.regla .campo input.franja{width:130px;padding:6px 8px}
 select{background:var(--sunk);color:var(--ink);border:1px solid var(--line-2);border-radius:7px;padding:8px 10px;font:inherit}
-.candado{display:flex;gap:6px;align-items:center;font-size:.78rem;color:var(--muted);margin:0;font-weight:400;white-space:nowrap}
+
+/* El interruptor de una regla de sí o no. Es una casilla: se marca con el teclado igual. */
+input.interruptor{
+  appearance:none;-webkit-appearance:none;width:38px;height:22px;flex:none;margin:0;padding:0;
+  border-radius:999px;background:var(--line-2);border:1px solid var(--line-2);position:relative;cursor:pointer;
+  transition:background .15s;
+}
+input.interruptor::after{
+  content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--ink);transition:transform .15s;
+}
+input.interruptor:checked{background:var(--accent);border-color:var(--accent)}
+input.interruptor:checked::after{transform:translateX(16px);background:var(--accent-ink)}
+input.interruptor:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* El candado: chico, pegado al control, con el ícono y lo que quiere decir escrito. */
+.candado{
+  display:inline-flex;gap:5px;align-items:center;margin:0;padding:3px 9px 3px 7px;min-width:7.6em;
+  border:1px solid var(--line-2);border-radius:999px;font-size:.76rem;font-weight:500;color:var(--muted);
+  white-space:nowrap;cursor:pointer;user-select:none;position:relative;
+}
+.candado input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.candado:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.candado:hover{border-color:var(--muted)}
+.candado .icono{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.candado.puesto{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+/* "Solo consola": a la vista, pero sin llamar la atención. */
+.regla .dueño{
+  display:inline-flex;align-items:center;min-width:7.6em;justify-content:center;padding:3px 9px;border-radius:999px;
+  border:1px dashed var(--line-2);font-size:.72rem;color:var(--muted);white-space:nowrap;
+}
+/* Una regla con candado lleva además una raya fina a la izquierda. */
+.regla.fija{box-shadow:inset 2px 0 0 var(--accent);padding-left:10px;margin-left:-10px}
 .candado input,.check input{width:auto;margin:0}
-.check{display:flex;gap:8px;align-items:center;margin:0;font-weight:400}
-.presets{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.presets button{width:auto;margin:0;flex:1 1 200px;text-align:left;font-weight:500}
-.presets small{display:block;color:var(--muted);font-size:.78rem;font-weight:400;margin-top:3px}
+.check{display:flex;gap:7px;align-items:center;margin:0;font-weight:400;font-size:.84rem;white-space:nowrap}
+.check input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+
+/* El botón de guardar queda a la vista mientras se recorren las reglas. */
+.reglas-pie{
+  position:sticky;bottom:0;z-index:2;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;
+  margin:14px -18px -18px;padding:12px 18px;background:var(--panel);border-top:1px solid var(--line);
+  border-radius:0 0 10px 10px;
+}
+.reglas-pie button{width:auto;margin:0;padding:10px 18px}
+.reglas-pie #msg-reglas{flex:1 1 220px}
+.reglas-pie .msg{margin:0;padding:7px 10px}
 
 footer{margin-top:28px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--line);padding-top:14px}
 [hidden]{display:none!important}
+
+@media (max-width:560px){
+  .campos{grid-template-columns:minmax(0,1fr)}
+  .campos .al-pie button{width:100%;margin-top:16px}
+  .regla-texto{flex-basis:100%}
+  .regla .campo{flex:1 1 100%}
+  .regla .campo select{max-width:none;flex:1 1 120px;min-width:0}
+  .reglas-pie button{flex:1 1 auto}
+}
+@media (prefers-reduced-motion:reduce){
+  input.interruptor,input.interruptor::after{transition:none}
+}

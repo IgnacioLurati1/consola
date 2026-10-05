@@ -19,11 +19,12 @@
     return;
   }
 
-  /* ---- las dos áreas: Instalaciones y Control ---- */
+  /* ---- las tres áreas: Instalaciones, Control y Ayuda ---- */
   const AREA_GUARDADA = "consola-area";
   const pestañas = [
     { boton: document.getElementById("tab-instalaciones"), area: document.getElementById("area-instalaciones"), nombre: "instalaciones" },
     { boton: document.getElementById("tab-control"), area: document.getElementById("area-control"), nombre: "control" },
+    { boton: document.getElementById("tab-ayuda"), area: document.getElementById("area-ayuda"), nombre: "ayuda" },
   ];
 
   function mostrarArea(nombre) {
@@ -42,7 +43,8 @@
     pestaña.boton.addEventListener("click", () => mostrarArea(pestaña.nombre));
     pestaña.boton.addEventListener("keydown", (evento) => {
       if (evento.key !== "ArrowRight" && evento.key !== "ArrowLeft") return;
-      const otra = pestañas.find((p) => p !== pestaña);
+      const paso = evento.key === "ArrowRight" ? 1 : -1;
+      const otra = pestañas[(pestañas.indexOf(pestaña) + paso + pestañas.length) % pestañas.length];
       mostrarArea(otra.nombre);
       otra.boton.focus();
     });
@@ -73,17 +75,37 @@
     try { return sessionStorage.getItem(clave) ?? localStorage.getItem(clave) ?? ""; } catch { return ""; }
   }
 
+  /**
+   * Si la página puede hablarle a esa dirección. Es lo mismo que deja el connect-src de
+   * index.html: con cualquier otra, el navegador corta el pedido antes de salir y lo único
+   * que dice es "Failed to fetch".
+   */
+  function servidorPermitido(direccion) {
+    try {
+      const url = new URL(direccion);
+      if (url.protocol === "https:" && url.hostname.endsWith(".up.railway.app")) return true;
+      return url.protocol === "http:" && url.hostname === "localhost" && url.port === "3000";
+    } catch {
+      return false;
+    }
+  }
+
   async function pedir(ruta, opciones = {}) {
-    const respuesta = await fetch(api + ruta, {
-      ...opciones,
-      // Sin cookies: la consola se identifica solamente con su token.
-      credentials: "omit",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(opciones.headers ?? {}),
-      },
-    });
+    let respuesta;
+    try {
+      respuesta = await fetch(api + ruta, {
+        ...opciones,
+        // Sin cookies: la consola se identifica solamente con su token.
+        credentials: "omit",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(opciones.headers ?? {}),
+        },
+      });
+    } catch {
+      throw new Error("No se pudo conectar con el servidor. Revisá la dirección y la conexión");
+    }
 
     let cuerpo = {};
     try { cuerpo = await respuesta.json(); } catch { /* una respuesta sin cuerpo */ }
@@ -99,9 +121,15 @@
 
   /* ---- paso 1: la instalación ---- */
   $("btn-destino").addEventListener("click", () => {
-    const valor = $("api").value.trim().replace(/\/+$/, "");
+    // Sin barras ni /api al final: la consola agrega /api/console/... por su cuenta.
+    const valor = $("api").value.trim().replace(/\/+$/, "").replace(/\/api$/i, "");
     if (!/^https?:\/\/.+/.test(valor)) {
       aviso("msg-login", "La dirección tiene que empezar con https://", "bad");
+      ver("paso-login", true);
+      return;
+    }
+    if (!servidorPermitido(valor)) {
+      aviso("msg-login", "Va la dirección del servidor en Railway, la que termina en .up.railway.app. La de la página del consultorio no sirve acá.", "bad");
       ver("paso-login", true);
       return;
     }
@@ -196,15 +224,18 @@
       fila.appendChild(quien);
 
       const estados = document.createElement("td");
+      const caja = document.createElement("div");
+      caja.className = "pills";
       const pastillas = [];
       if (admin.owner) pastillas.push(pastilla("consola", "yo"));
       if (!admin.active) pastillas.push(pastilla("cerrada", "sin"));
-      if (!admin.passwordSetAt) pastillas.push(pastilla("sin contraseña", "sin"));
-      if (!pastillas.length) pastillas.push(pastilla("al día"));
-      pastillas.forEach((p, i) => {
-        if (i) estados.append(" ");
-        estados.appendChild(p);
-      });
+      // Solo mientras tiene la contraseña al azar con la que se creó. `passwordSetAt` no
+      // sirve para esto: es null en toda cuenta anterior a esa columna. Un servidor viejo
+      // no manda `provisionalPassword`, y entonces no se marca nada.
+      if (admin.provisionalPassword === true) pastillas.push(pastilla("sin contraseña", "pendiente"));
+      if (!pastillas.length) pastillas.push(pastilla("al día", "bien"));
+      caja.append(...pastillas);
+      estados.appendChild(caja);
       fila.appendChild(estados);
 
       cuerpo.appendChild(fila);
@@ -271,7 +302,11 @@
     dibujarReglas();
   }
 
-  function campoDe(regla) {
+  /**
+   * El control de una regla, que va a la derecha de su nombre. El primer elemento que lleva
+   * `id` es el que nombra la etiqueta de la regla.
+   */
+  function campoDe(regla, id) {
     const valor = borrador[regla.key];
     const cambiar = (nuevo) => {
       borrador[regla.key] = nuevo;
@@ -279,8 +314,12 @@
     };
 
     if (regla.kind === "bool") {
+      // Un interruptor: es una casilla de siempre, dibujada distinto.
       const check = document.createElement("input");
       check.type = "checkbox";
+      check.id = id;
+      check.className = "interruptor";
+      check.setAttribute("role", "switch");
       check.checked = valor === true;
       check.addEventListener("change", () => cambiar(check.checked));
       return [check];
@@ -288,6 +327,7 @@
 
     if (regla.kind === "choice") {
       const lista = document.createElement("select");
+      lista.id = id;
       for (const opcion of regla.options) {
         const item = document.createElement("option");
         item.value = opcion.value;
@@ -301,28 +341,33 @@
 
     if (regla.kind === "span") {
       const texto = document.createElement("input");
-      texto.className = "mono";
+      texto.id = id;
+      texto.className = "mono franja";
       texto.value = String(valor ?? "");
       texto.placeholder = "09:00-13:00";
       texto.addEventListener("change", () => cambiar(texto.value.trim()));
       return [texto];
     }
 
-    // Número, y si acepta "nada", con su interruptor al lado.
+    // Número, y si acepta "nada", con su casilla al lado.
     const piezas = [];
+    const sinValor = regla.nullLabel && valor === null;
     if (regla.nullLabel) {
       const nada = document.createElement("label");
       nada.className = "check";
       const check = document.createElement("input");
       check.type = "checkbox";
+      if (sinValor) check.id = id;
       check.checked = valor === null;
       check.addEventListener("change", () => cambiar(check.checked ? null : regla.key === "reminderHoursBefore" ? 24 : 30));
       nada.append(check, document.createTextNode(regla.nullLabel));
       piezas.push(nada);
     }
-    if (!(regla.nullLabel && valor === null)) {
+    if (!sinValor) {
       const numero = document.createElement("input");
       numero.type = "number";
+      numero.id = id;
+      numero.className = "numero";
       numero.min = regla.min;
       numero.max = regla.max;
       numero.value = valor ?? "";
@@ -332,6 +377,51 @@
     return piezas;
   }
 
+  /** Un candado abierto o cerrado, dibujado con dos trazos. */
+  function iconoCandado(cerrado) {
+    const NS = "http://www.w3.org/2000/svg";
+    const dibujo = document.createElementNS(NS, "svg");
+    dibujo.setAttribute("viewBox", "0 0 16 16");
+    dibujo.setAttribute("aria-hidden", "true");
+    dibujo.setAttribute("class", "icono");
+    const cuerpo = document.createElementNS(NS, "rect");
+    for (const [clave, valor] of Object.entries({ x: 3, y: 7, width: 10, height: 7, rx: 1.5 })) cuerpo.setAttribute(clave, valor);
+    const arco = document.createElementNS(NS, "path");
+    arco.setAttribute("d", cerrado ? "M5.5 7V5a2.5 2.5 0 0 1 5 0v2" : "M5.5 7V5a2.5 2.5 0 0 1 4.9-.7");
+    dibujo.append(cuerpo, arco);
+    return dibujo;
+  }
+
+  /**
+   * El candado de una regla del consultorio: una casilla con su candado dibujado y lo que
+   * quiere decir escrito al lado, para que no dependa del ícono.
+   */
+  function candadoDe(regla) {
+    const candado = document.createElement("label");
+    candado.className = "candado";
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.checked = bloqueadas.has(regla.key);
+    check.setAttribute("aria-label", `Candado de ${regla.label}`);
+    const texto = document.createElement("span");
+    const pintar = () => {
+      candado.classList.toggle("puesto", check.checked);
+      candado.title = check.checked ? "El consultorio no la puede cambiar desde su panel" : "El consultorio la puede cambiar desde su panel";
+      texto.textContent = check.checked ? "Con candado" : "Sin candado";
+      candado.querySelector("svg")?.remove();
+      candado.insertBefore(iconoCandado(check.checked), texto);
+    };
+    check.addEventListener("change", () => {
+      if (check.checked) bloqueadas.add(regla.key);
+      else bloqueadas.delete(regla.key);
+      pintar();
+      candado.closest(".regla")?.classList.toggle("fija", check.checked);
+    });
+    candado.append(check, texto);
+    pintar();
+    return candado;
+  }
+
   function dibujarReglas() {
     const presets = $("presets");
     presets.replaceChildren();
@@ -339,10 +429,14 @@
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "ghost";
-      boton.textContent = "Partir de " + preset.label;
+      // La descripción entera queda en el globo: en el botón va en una sola línea.
+      boton.title = preset.description;
+      const nombre = document.createElement("span");
+      nombre.className = "preset-nombre";
+      nombre.textContent = "Partir de " + preset.label;
       const detalle = document.createElement("small");
       detalle.textContent = preset.description;
-      boton.appendChild(detalle);
+      boton.append(nombre, detalle);
       boton.addEventListener("click", () => {
         Object.assign(borrador, preset.values);
         dibujarReglas();
@@ -350,6 +444,7 @@
       });
       presets.appendChild(boton);
     }
+    $("presets-titulo").hidden = !(reglas.presets ?? []).length;
 
     const destino = $("reglas");
     destino.replaceChildren();
@@ -362,49 +457,48 @@
 
       for (const regla of reglas.rules.filter((r) => r.group === grupo.key)) {
         if (MOSTRAR_SI[regla.key] && !MOSTRAR_SI[regla.key](borrador)) continue;
+        const id = `regla-${regla.key}`;
 
         const fila = document.createElement("div");
         fila.className = "regla";
+        if (regla.scope !== "client") fila.classList.add("de-consola");
+        else if (bloqueadas.has(regla.key)) fila.classList.add("fija");
 
+        // A la izquierda, el nombre y la ayuda.
+        const texto = document.createElement("div");
+        texto.className = "regla-texto";
         const nombre = document.createElement("label");
+        nombre.htmlFor = id;
         nombre.textContent = regla.label;
-        fila.appendChild(nombre);
-
-        if (regla.scope === "client") {
-          const candado = document.createElement("label");
-          candado.className = "candado";
-          const check = document.createElement("input");
-          check.type = "checkbox";
-          check.checked = bloqueadas.has(regla.key);
-          check.addEventListener("change", () => {
-            if (check.checked) bloqueadas.add(regla.key);
-            else bloqueadas.delete(regla.key);
-          });
-          candado.append(check, document.createTextNode("candado"));
-          fila.appendChild(candado);
-        } else {
-          const marca = document.createElement("span");
-          marca.className = "dueño";
-          marca.textContent = "solo consola";
-          fila.appendChild(marca);
-        }
-
+        texto.appendChild(nombre);
         if (regla.hint) {
           const ayuda = document.createElement("p");
           ayuda.className = "hint";
           ayuda.textContent = regla.hint;
-          fila.appendChild(ayuda);
+          texto.appendChild(ayuda);
         }
+        fila.appendChild(texto);
 
+        // A la derecha, el control y, pegado, el candado o la marca de "solo consola".
         const campo = document.createElement("div");
         campo.className = "campo";
-        campo.append(...campoDe(regla));
+        campo.append(...campoDe(regla, id));
+        if (regla.scope === "client") {
+          campo.appendChild(candadoDe(regla));
+        } else {
+          const marca = document.createElement("span");
+          marca.className = "dueño";
+          marca.title = "El consultorio ni siquiera la ve";
+          marca.textContent = "solo consola";
+          campo.appendChild(marca);
+        }
         fila.appendChild(campo);
 
         caja.appendChild(fila);
       }
 
-      destino.appendChild(caja);
+      // Un grupo con todas sus reglas escondidas (por otra regla) no se muestra vacío.
+      if (caja.querySelector(".regla")) destino.appendChild(caja);
     }
   }
 
@@ -452,7 +546,10 @@
   }
 
   let areaInicial = "instalaciones";
-  try { areaInicial = localStorage.getItem(AREA_GUARDADA) === "control" ? "control" : "instalaciones"; } catch {}
+  try {
+    const guardada = localStorage.getItem(AREA_GUARDADA);
+    if (pestañas.some((p) => p.nombre === guardada)) areaInicial = guardada;
+  } catch {}
   mostrarArea(areaInicial);
   if (areaInicial === "instalaciones") $("api").focus();
 

@@ -5,9 +5,10 @@ Una página estática, sin build ni dependencias, con dos áreas:
 - **Instalaciones**: la única página habilitada para crear un administrador en la base de un
   consultorio y fijar sus reglas. Habla con el servidor de cada turnero por
   `/api/console/*`.
-- **Control**: el estado de todas las páginas, el gasto de Railway, los clientes, los tickets
-  y las notas. No entra a ningún turnero; todo sale del repositorio privado de datos
-  (`Control/control-datos`) por la API de GitHub.
+- **Control**: el estado de todas las páginas, los incidentes, las corridas del chequeo, el
+  gasto de Railway, los clientes, los tickets, las notas y los ajustes del control. No entra
+  a ningún turnero; todo sale del repositorio privado de datos (`Control/control-datos`)
+  por la API de GitHub, y casi todo se edita desde acá sin abrir el repositorio.
 
 No va adentro de `frontend/`. Tiene que vivir en **su propio dominio**, porque el dominio
 es uno de los cuatro controles de la puerta: el servidor de cada consultorio acepta
@@ -19,15 +20,16 @@ diferencia del resto de la aplicación, una request sin `Origin` se rechaza.
 | Archivo | Qué es |
 |---|---|
 | `index.html` | El marcado y la política de contenido |
-| `consola.css`, `consola.js` | Instalaciones y las pestañas. Es el código de antes, sacado del HTML |
+| `consola.css`, `consola.js` | Instalaciones y las pestañas. Mismos pasos y mismas llamadas de siempre; en pantalla ancha la cuenta y el alta van lado a lado, y cada regla es una fila con el control y el candado a la derecha |
 | `control.css`, `control.js` | Control |
+| `ayuda.css`, `ayuda/` | Ayuda: un recorrido corto por todo lo que hace la consola, con capturas de datos de ejemplo |
 
 Los estilos y los scripts están en archivos y no adentro del HTML por la política de
 contenido: `script-src 'self'` no deja correr nada escrito en la página.
 
 ## Cómo se publica
 
-Cualquier hosting estático sirve: subir los cinco archivos juntos. Lo que importa es que
+Cualquier hosting estático sirve: subir todos los archivos juntos, con la carpeta `ayuda/`. Lo que importa es que
 quede en un dominio distinto del de la página del consultorio, y que ese dominio sea el que
 figura en `CONSOLE_ORIGIN` de cada instalación, sin la barra final.
 
@@ -66,6 +68,11 @@ lugar, los dos scripts se niegan a dibujar si la página está adentro de un mar
 | `TOKEN_ISSUER` | El nombre corto de la instalación, que la consola muestra para no operar a ciegas |
 | `INITIAL_ADMINS` | La cuenta con la que se abre la consola la primera vez, en una base nueva |
 
+La marca "sin contraseña" de la lista de administradores sale de `provisionalPassword` en
+`GET /api/console/status`: es verdadera solo mientras la cuenta tiene la contraseña al azar
+con la que se creó. Un servidor anterior a ese campo no lo manda, y entonces no se marca
+nada.
+
 Control no necesita ninguna. Usa solo `GET /api/health`, que es pública (ver abajo).
 
 ## Los cuatro controles
@@ -91,16 +98,54 @@ escritura. Cómo crearlo está en el README de `control-datos`.
 El token queda en `sessionStorage`: se borra al cerrar la pestaña. El nombre del
 repositorio queda en `localStorage`, que no es secreto.
 
-| Vista | Qué muestra |
+Arriba de todas las vistas va un **resumen**: "Todo en orden", o cuántos problemas hay y
+cuáles (sitios con falla o aviso, la última corrida fallida, un chequeo atrasado, Railway
+sin token, con error, pasado del límite o del presupuesto), cada uno con un enlace a donde
+se ve.
+
+| Vista | Qué muestra y qué se hace |
 |---|---|
-| Estado | Cada sitio con su último resultado, la hora del chequeo, la serie del último día, los incidentes abiertos y **Chequear ahora**, que dispara el flujo. En los turneros, además, la ruta de salud consultada en vivo desde el navegador |
-| Railway | Uso y estimado del período por espacio de trabajo y por proyecto, del último chequeo. Los sitios sin proyecto de Railway dicen "Sin datos de uso" |
-| Clientes | WhatsApp, teléfono y mail de cada cliente, con sus tickets abiertos y sus notas |
+| Estado | Cada sitio con su último resultado, la serie del último día y, en los turneros, la ruta de salud consultada en vivo. Los **incidentes**, abiertos y cerrados hace poco, con su detalle y comentarios: comentar, cerrar y reabrir. Las **últimas corridas** del flujo (estado, resultado, cuándo, si fue programada o a mano), y en las fallidas el paso que falló con lo que suele querer decir. **Chequear ahora** dispara el flujo y lo sigue (pedido, en cola, en curso, terminado); si falla, dice en qué paso |
+| Railway | La clase de token en uso (cuenta, espacio o proyecto), el **presupuesto mensual** con cuánto se lleva del estimado, y el uso por espacio y por proyecto. A cada proyecto se le **asigna el sitio** ahí mismo. Los proyectos que ningún sitio usa se listan con **Agregar como sitio**, que abre el alta con el proyecto ya cargado. Los espacios de trabajo a mirar, si hicieran falta |
+| Clientes | WhatsApp, teléfono y mail de cada cliente, con sus tickets abiertos y sus notas. **Nuevo sitio** y **Editar**: datos del sitio y del contacto, y borrar |
 | Tickets | Issues con la etiqueta `ticket`. Filtrar, crear, comentar, cerrar y reabrir |
 | Notas | Relevamientos, análisis y notas por cliente, en `notas/`. Crear y editar; se guardan con un commit cada una |
+| Ajustes | Umbrales del chequeo y los usuarios de GitHub que se mencionan en cada incidente. Y lo que se hace en GitHub, con sus enlaces |
+
+### Cómo se edita `sitios.json`
+
+Cada cambio (un sitio, un contacto, un proyecto asignado, el presupuesto, los ajustes) es
+un commit `Sitios · …` con la API de contenidos. Se manda con el `sha` de la versión leída:
+si el archivo cambió en el medio, GitHub contesta 409, la página lo vuelve a leer y pide
+guardar otra vez, y el cambio sale sobre la versión nueva sin pisar la otra. Se escribe con
+dos espacios y un salto al final, como siempre, y los campos que la página no conoce se
+dejan como están.
+
+Antes de guardar se valida lo mismo que `scripts/check.mjs` necesita para no tropezar:
+
+- el id en minúsculas, números y guiones, único, y fijo después de creado (es la etiqueta
+  `cliente:<id>` y la carpeta de notas);
+- la página y el servidor con `https://`, y el servidor obligatorio en un turnero;
+- teléfono y WhatsApp solo con números y espacios, el WhatsApp con código de país;
+- los umbrales como enteros (lento de 100 a 15000 ms, la falla de certificado en menos
+  días que el aviso), el presupuesto mayor que cero, y los usuarios a avisar con el formato
+  de GitHub.
+
+### Lo que no se puede hacer desde acá
+
+| Qué | Por qué | Dónde |
+|---|---|---|
+| El token de Railway (`RAILWAY_TOKEN`) | Es un secreto de Actions, y el token de la consola no tiene permiso **Secrets**. A propósito | Settings → Secrets and variables → Actions. La vista Railway tiene los pasos y el enlace |
+| La variable `RAILWAY_WORKSPACE_ID` | Tampoco tiene permiso **Variables** | Al lado de los secretos |
+| La frecuencia del chequeo y `scripts/check.mjs` | El flujo fija la huella del script, y el token no tiene **Workflows** | Con git, desde la computadora |
+| Leer el registro completo de una corrida | GitHub lo sirve con una redirección a otro dominio, que la política de contenido corta. La página muestra el paso que falló y enlaza la corrida | La corrida en GitHub |
+| Renovar el token de la consola | Es de la cuenta, no del repositorio | Settings → Developer settings → Fine-grained tokens |
+| Borrar una nota | No está hecho | En el repositorio |
 
 Todo lo que viene del repositorio o de una API se dibuja como texto (`textContent`), nunca
-como HTML. Los enlaces armados con datos solo pueden ser `https:`, `mailto:` o `tel:`.
+como HTML. Los enlaces armados con datos solo pueden ser `https:`, `mailto:` o `tel:`. El
+cuerpo de un incidente (la tabla de controles que escribe `check.mjs`) se arma con nodos de
+tabla, también sin interpretar HTML.
 
 ## La ruta de salud de los turneros
 
@@ -143,9 +188,11 @@ comprometida de alguna:
    recordado no pasan de un origen a otro.
 
 **Si me roban el token de GitHub** se pueden leer contactos y notas y tocar issues y
-archivos del repositorio de datos, pero no el token de Railway: el flujo fija la huella
-del script que lo usa, y el token de la consola no puede cambiar flujos. Se revoca en
-GitHub → Settings → Developer settings → Fine-grained tokens.
+archivos del repositorio de datos (`sitios.json` incluido, así que también qué se chequea y
+a quién se avisa), pero no el token de Railway: el flujo fija la huella del script que lo
+usa, y el token de la consola no puede cambiar flujos ni leer secretos. Cada cambio queda
+como commit, así que se ve y se deshace. Se revoca en GitHub → Settings → Developer
+settings → Fine-grained tokens.
 
 **Si me roban la sesión de la consola de Instalaciones**, valen los cuatro controles de
 siempre.

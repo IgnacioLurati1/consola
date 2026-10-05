@@ -1,16 +1,26 @@
 /* El área Control. Usa las mismas variables que consola.css y suma lo que hace falta para
    ver varias cosas a la vez: grillas de tarjetas, listas con detalle al lado, chips de
-   estado. Más ancha que Instalaciones porque acá se mira, no se llena un formulario. */
+   estado. Más ancha que Instalaciones porque acá se mira, no se llena un formulario.
 
-.control .card.angosta{max-width:620px}
-.control h3{margin:0 0 4px;font-size:.98rem}
-.control h4{margin:14px 0 6px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.control .hint{margin:2px 0 0;color:var(--muted);font-size:.84rem}
+   Medidas de la casa: tarjetas con 18 px de relleno y 14 px entre una y otra; títulos de
+   vista a 1.15rem, de tarjeta a 1rem, y los rótulos chicos en mayúscula a .74rem. */
+
+.control .card{margin-top:14px}
+.control .card.angosta{max-width:var(--angosto)}
+.control h3{margin:0;font-size:1rem;line-height:1.35}
+.control h4{margin:16px 0 6px;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.control .hint{margin:4px 0 0;color:var(--muted);font-size:.84rem}
+.control .ayuda{margin:4px 0 0;color:var(--muted);font-size:.78rem;line-height:1.45}
+.control .crece{flex:1 1 auto}
 
 /* Los botones de la consola ocupan todo el ancho; acá van en fila y del tamaño del texto. */
 .control button.chico{width:auto;margin:0;padding:7px 14px;font-size:.88rem}
+.control button.peligro{color:var(--stop);border-color:var(--stop-line)}
+.control button.peligro.lleno{background:var(--stop);color:#1d0b0e;border-color:var(--stop)}
 .control .acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
-.control form .acciones{margin-top:16px}
+.control .acciones.separadas{justify-content:flex-start}
+.control form .acciones,.control .card > .acciones{margin-top:16px}
+.control button.enlace{width:auto;margin:0;padding:0;background:none;border:0;color:var(--accent);font-weight:400;font-size:inherit;text-decoration:underline;text-underline-offset:3px}
 
 .control textarea{
   width:100%;margin-top:5px;background:var(--sunk);color:var(--ink);
@@ -19,6 +29,8 @@
 .control textarea.mono{font-family:var(--mono);font-size:.85rem;line-height:1.5}
 .control textarea:focus-visible,.control select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .control select{width:100%;margin-top:5px}
+.control [aria-invalid="true"]{border-color:var(--stop)!important}
+.control input:disabled,.control select:disabled{opacity:.6}
 
 /* Barra de arriba: repositorio, vistas y desconectar. */
 .c-barra{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-top:18px}
@@ -31,21 +43,68 @@
 .c-vistas button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 
 .c-cabecera{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-top:22px}
-.c-cabecera h2{margin:0;font-size:1.12rem}
+.c-cabecera h2{margin:0;font-size:1.15rem}
 
-.grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px;margin-top:14px}
+.grilla.dos{grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));align-items:start}
 .grilla > .card{margin-top:0}
+
+/* Un bloque de una vista, con su título y algo a la derecha. */
+.bloque{margin-top:26px}
+.bloque-cabeza{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between}
+.bloque-cabeza a{font-size:.84rem}
+.vacio-linea{margin:10px 0 0;color:var(--muted);font-size:.88rem}
+
+/* Cargando: un punto que late. Sin animación si se pidió menos movimiento. */
+.cargando{display:flex;align-items:center;gap:8px;margin:12px 0 0;color:var(--muted);font-size:.86rem}
+.cargando::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:latido 1.1s ease-in-out infinite}
+@keyframes latido{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* El resumen de arriba: todo en orden o cuántos problemas, con el color del peor. */
+.resumen{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:14px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+.resumen .cargando{margin:0}
+.resumen-marca{flex:none;width:12px;height:12px;margin-top:5px;border-radius:50%;background:var(--muted)}
+.resumen strong{display:block;font-size:1rem}
+.resumen p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+.resumen ul{list-style:none;margin:6px 0 0;padding:0}
+.resumen li{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);font-size:.88rem}
+.resumen li .punto{flex:none;align-self:center}
+.resumen .crece,.resumen li .que{flex:1 1 0;min-width:0}
+.resumen button{white-space:nowrap}
+.resumen li .quien{font-weight:600}
+.resumen li .detalle{color:var(--muted)}
+.resumen.ok{background:var(--ok-bg);border-color:var(--ok-line)}
+.resumen.ok .resumen-marca{background:var(--ok)}
+.resumen.ok strong{color:var(--ok)}
+.resumen.aviso{background:var(--warn-bg);border-color:var(--warn-line)}
+.resumen.aviso .resumen-marca{background:var(--warn)}
+.resumen.aviso strong{color:var(--warn)}
+.resumen.falla{background:var(--stop-bg);border-color:var(--stop-line)}
+.resumen.falla .resumen-marca{background:var(--stop)}
+.resumen.falla strong{color:var(--stop)}
+.resumen.compacto{align-items:center;padding:10px 14px}
+.resumen.compacto .resumen-marca{margin-top:0}
+.resumen.compacto strong,.resumen.compacto p{display:inline;font-size:.88rem}
+.resumen.compacto p::before{content:" "}
+.resumen.compacto button{flex:none}
+
+/* Los "listo", abajo y fijos: se ven aunque la página esté corrida. */
+#c-hecho{position:fixed;left:0;right:0;bottom:16px;z-index:20;display:flex;justify-content:center;padding:0 16px;pointer-events:none}
+#c-hecho .msg{margin:0;max-width:480px;width:100%;pointer-events:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 
 /* Nivel: siempre con palabra y punto, nunca color solo. */
 .nivel{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid;white-space:nowrap}
 .nivel::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.nivel.ok{color:var(--ok);background:var(--ok-bg);border-color:#24503a}
-.nivel.aviso{color:var(--warn);background:var(--warn-bg);border-color:#5a4720}
-.nivel.falla{color:var(--stop);background:var(--stop-bg);border-color:#5a2a31}
-.nivel.nada{color:var(--muted);background:var(--sunk);border-color:var(--line-2)}
+.nivel.ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
+.nivel.aviso{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-line)}
+.nivel.falla{color:var(--stop);background:var(--stop-bg);border-color:var(--stop-line)}
+.nivel.nada,.nivel.cerrado{color:var(--muted);background:var(--sunk);border-color:var(--line-2)}
+.nivel.curso{color:var(--accent);background:var(--accent-bg);border-color:#24445e}
+.nivel.curso::before{animation:latido 1.1s ease-in-out infinite}
 /* La falla además con un borde a la izquierda de la tarjeta: se ve de lejos. */
 .sitio.falla{box-shadow:inset 3px 0 0 var(--stop)}
 .sitio.aviso{box-shadow:inset 3px 0 0 var(--warn)}
+.card.resaltado,.bloque.resaltado{outline:2px solid var(--accent);outline-offset:3px;transition:outline-color .3s}
 
 .sitio-cabeza{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
 .sitio-cabeza .pill{margin-left:6px;vertical-align:2px}
@@ -58,8 +117,7 @@
 .spark rect.vacio{fill:var(--line)}
 .spark rect.costo{fill:var(--accent)}
 .spark.alta{height:60px}
-.control button.enlace{width:auto;margin:0;padding:0;background:none;border:0;color:var(--accent);font-weight:400;font-size:inherit;text-decoration:underline;text-underline-offset:3px}
-.spark-pie{display:flex;justify-content:space-between;color:var(--muted);font-size:.74rem;margin-top:3px}
+.spark-pie{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.74rem;margin-top:3px}
 
 .controles{list-style:none;margin:12px 0 0;padding:0;font-size:.84rem}
 .controles li{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--line)}
@@ -74,25 +132,113 @@
 .vivo{margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--sunk);font-size:.82rem;display:flex;gap:8px;align-items:center;justify-content:space-between}
 .vivo .rotulo{color:var(--muted)}
 
-.enlaces{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.84rem}
+.enlaces{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.84rem;align-items:baseline}
 .control a{color:var(--accent);text-underline-offset:3px}
 .control a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
 
-/* Incidentes abiertos, arriba de todo. */
-.incidentes{margin-top:14px;border:1px solid #5a2a31;background:var(--stop-bg);border-radius:10px;padding:12px 14px}
-.incidentes h3{color:var(--stop)}
-.incidentes ul{list-style:none;margin:6px 0 0;padding:0}
-.incidentes li{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;padding:6px 0;border-top:1px solid #3a2026;font-size:.88rem}
-.incidentes li:first-child{border-top:0}
-.sin-incidentes{margin-top:14px;color:var(--muted);font-size:.86rem}
+.vacio-grande{text-align:center;padding:28px 18px;color:var(--muted)}
+.vacio-grande p{margin:0 0 14px}
+
+/* Desplegables: incidentes, corridas fallidas, ayudas. La flecha gira al abrir. */
+.control details > summary{cursor:pointer;list-style:none}
+.control details > summary::-webkit-details-marker{display:none}
+
+/* Incidentes */
+.incidentes-lista{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+details.incidente{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+details.incidente[open]{border-color:var(--line-2)}
+details.incidente.falla{box-shadow:inset 3px 0 0 var(--stop)}
+details.incidente.aviso{box-shadow:inset 3px 0 0 var(--warn)}
+details.incidente > summary{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:space-between;padding:12px 14px}
+details.incidente > summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-left:4px;flex:none}
+details.incidente[open] > summary::after{transform:rotate(-135deg)}
+details.incidente .meta{margin:0}
+.inc-titulo{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;flex:1 1 260px;min-width:0}
+.inc-titulo strong{font-size:.92rem}
+.inc-cuerpo{padding:0 14px 14px;border-top:1px solid var(--line)}
+.inc-cuerpo > .cuerpo:first-child{margin-top:14px}
+
+/* Corridas */
+.corridas{list-style:none;margin:10px 0 0;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.corrida{display:grid;grid-template-columns:92px minmax(0,1fr) auto auto;gap:4px 14px;align-items:center;padding:9px 14px;border-top:1px solid var(--line);font-size:.86rem}
+.corrida:first-child{border-top:0}
+.corrida .nivel{justify-self:start}
+.corrida .meta{margin:0;text-align:right}
+.corrida-enlace{font-size:.8rem}
+.corrida-que{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.corrida-falla{grid-column:1/-1}
+.corrida-falla > summary{display:inline-block;color:var(--stop);font-size:.82rem;text-decoration:underline;text-underline-offset:3px;padding:2px 0}
+.corrida-detalle{margin:6px 0 4px;padding:10px 12px;border-radius:8px;background:var(--stop-bg);border:1px solid var(--stop-line)}
+.corrida-detalle .cargando{margin:0}
+.falla-paso + .falla-paso{margin-top:8px}
+.falla-paso strong{color:var(--stop);font-size:.88rem}
+.falla-paso p{margin:2px 0 0;color:var(--ink);font-size:.84rem}
+.corrida-detalle .enlaces,.progreso-fallas .enlaces{margin-top:8px}
+
+/* Chequear ahora: el pedido, la cola, la corrida y el final, en cuatro pasos. */
+.progreso{margin-top:14px;padding:14px 16px;border:1px solid #24445e;border-radius:10px;background:var(--accent-bg)}
+.progreso.bien{border-color:var(--ok-line);background:var(--ok-bg)}
+.progreso.mal{border-color:var(--stop-line);background:var(--stop-bg)}
+.progreso-cabeza{display:flex;gap:8px 14px;align-items:baseline;flex-wrap:wrap}
+.progreso-cabeza .meta{margin:0}
+.control .progreso-cabeza button.enlace{margin-left:auto}
+.fases{display:flex;gap:6px;list-style:none;margin:12px 0 0;padding:0}
+.fases li{flex:1 1 0;min-width:0;padding-top:7px;border-top:3px solid var(--line-2);color:var(--muted);font-size:.78rem}
+.fases li.hecha{border-top-color:var(--accent);color:var(--ink)}
+.fases li.actual{border-top-color:var(--accent);color:var(--ink);font-weight:600;animation:latido-borde 1.4s ease-in-out infinite}
+.fases li.bien{border-top-color:var(--ok);color:var(--ok);font-weight:600}
+.fases li.mal{border-top-color:var(--stop);color:var(--stop);font-weight:600}
+@keyframes latido-borde{0%,100%{border-top-color:var(--accent)}50%{border-top-color:var(--line-2)}}
+.progreso-texto{margin:10px 0 0;font-size:.9rem}
+.progreso.mal .progreso-texto{color:var(--stop)}
+.progreso.bien .progreso-texto{color:var(--ok)}
+.progreso-fallas{margin-top:10px;padding-top:10px;border-top:1px solid var(--stop-line)}
 
 /* Railway */
-.cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin-top:12px}
 .cifra{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-.cifra .rotulo{display:block;color:var(--muted);font-size:.76rem;letter-spacing:.04em;text-transform:uppercase}
+.cifra .rotulo{display:block;color:var(--muted);font-size:.74rem;letter-spacing:.04em;text-transform:uppercase}
 .cifra .valor{display:block;font-size:1.3rem;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
 .cifra .valor.chica{font-size:1rem}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.valor-grande{margin:6px 0 0;font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums}
+.comparacion{margin-top:8px}
+.comparacion .meta{margin-top:4px}
+.barra{display:block;width:100%;height:8px;margin-top:8px;border-radius:4px;overflow:hidden}
+.barra .fondo{fill:var(--line)}
+.barra .dentro{fill:var(--ok)}
+.barra .cerca{fill:var(--warn)}
+.barra .pasado{fill:var(--stop)}
+.en-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.en-fila > input{flex:1 1 200px;margin:0}
+.con-unidad{display:flex;align-items:center;gap:8px;flex:1 1 160px}
+.con-unidad input{margin:0;min-width:0}
+.con-unidad span{color:var(--muted);font-size:.84rem;white-space:nowrap}
+.fila-campos .con-unidad{margin-top:5px}
+.proyectos .proyecto-nombre{font-weight:500}
+.proyectos .sitio-celda{min-width:190px}
+.asignado,.eligiendo{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.asignado .sin{color:var(--muted)}
+.eligiendo select{width:auto;flex:1 1 140px;margin:0;padding:6px 8px}
+.sitio-celda .msg{margin-top:6px;padding:6px 8px;font-size:.8rem}
+.mini-lista .motivo{color:var(--muted);font-size:.8rem;text-align:right}
+.mini-lista.libres{margin-top:10px}
+.mini-lista.libres li{align-items:center;flex-wrap:wrap;padding:8px 0}
+.mini-lista.libres li > span{min-width:0;overflow-wrap:anywhere}
+.control .mini-lista.libres button{border:1px solid var(--line-2);color:var(--ink);text-decoration:none;padding:6px 12px;font-weight:500}
+
+/* Cómo hacer algo en GitHub: desplegable, con los pasos numerados. */
+.como > summary{display:inline-block;margin-top:12px;color:var(--accent);font-size:.86rem;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+details.card.como > summary{margin-top:0;font-size:1rem;font-weight:600;color:var(--ink);text-decoration:none}
+details.card.como > summary::before{content:"";display:inline-block;width:6px;height:6px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin:0 10px 2px 2px}
+details.card.como[open] > summary::before{transform:rotate(45deg)}
+.pasos{margin:8px 0 0;padding-left:20px;font-size:.86rem}
+.pasos li{margin-top:4px}
+.lista-github{list-style:none;margin:10px 0 0;padding:0}
+.lista-github li{padding:10px 0;border-top:1px solid var(--line)}
+.lista-github li:first-child{border-top:0}
+.lista-github strong{font-size:.9rem}
+.lista-github .enlaces{margin-top:6px}
 
 /* Clientes */
 .botones-contacto{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -103,18 +249,25 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .boton:hover{border-color:var(--accent)}
 .boton.principal{background:var(--accent);color:var(--accent-ink)!important;border-color:var(--accent)}
 .mini-lista{list-style:none;margin:0;padding:0;font-size:.85rem}
-.mini-lista li{padding:4px 0;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:space-between;align-items:baseline}
+.mini-lista li{padding:5px 0;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;align-items:baseline}
 .mini-lista li:first-child{border-top:0}
 .mini-lista .vacio{color:var(--muted)}
 .mini-lista .meta{white-space:nowrap;margin:0}
-.card > .acciones{margin-top:16px}
 .mini-lista button{width:auto;margin:0;padding:0;background:none;border:0;color:var(--accent);font-weight:500;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .nota-cliente{margin:10px 0 0;color:var(--muted);font-size:.84rem;white-space:pre-wrap}
+.card > .acciones{justify-content:flex-start}
+
+/* Formularios: el editor de sitios y los ajustes. */
+.formulario fieldset{margin-top:16px;padding:6px 14px 14px}
+.formulario h3.separado{margin-top:22px}
+.confirmar{margin-top:14px;padding:12px 14px;border-radius:8px;border:1px solid var(--stop-line);background:var(--stop-bg)}
+.confirmar p{margin:0;font-size:.88rem}
+.confirmar .acciones{margin-top:10px}
 
 /* Tickets y notas: filtros en una fila, lista a la izquierda y detalle a la derecha. */
 .filtros{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:flex-end}
-.filtros label{margin:0;font-size:.78rem;color:var(--muted);font-weight:500;min-width:140px}
-.filtros label.crece{flex:1 1 200px}
+.filtros label{margin:0;font-size:.78rem;color:var(--muted);font-weight:500;min-width:140px;flex:1 1 140px}
+.filtros label.crece{flex:2 1 200px}
 .filtros select,.filtros input{margin-top:4px;padding:7px 9px;font-size:.88rem}
 
 .dos-columnas{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
@@ -130,7 +283,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .item[aria-current="true"]{border-color:var(--accent)}
 .item .titulo{display:block;font-weight:600;font-size:.92rem}
 .item .linea{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;color:var(--muted);font-size:.78rem;align-items:center}
-.lista .vacio{color:var(--muted);font-size:.86rem;padding:10px 2px}
+.lista .vacio{color:var(--muted);font-size:.86rem;padding:10px 2px;margin:0}
 
 .pill.alta{border-color:var(--stop);color:var(--stop)}
 .pill.media{border-color:var(--warn);color:var(--warn)}
@@ -139,15 +292,63 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .pill.cerrado{border-color:var(--ok);color:var(--ok)}
 
 .cuerpo{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.88rem;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:12px}
+.cuerpo.rico{white-space:normal}
+.cuerpo.rico p{margin:0 0 8px;white-space:pre-wrap}
+.cuerpo.rico p:last-child{margin-bottom:0}
+.tabla-md{overflow-x:auto;margin:2px 0 8px}
+.tabla-md table{margin:0;font-size:.82rem}
+.tabla-md th,.tabla-md td{padding:5px 8px}
+.tabla-md th{white-space:nowrap}
+.comentarios .cargando{margin-top:6px}
 .comentario{margin-top:10px;border-left:2px solid var(--line-2);padding-left:10px}
 .comentario .quien{color:var(--muted);font-size:.78rem}
 .comentario .cuerpo{margin-top:4px}
 
-.fila-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 12px}
+.fila-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:0 12px}
 
 @media (max-width:760px){
   .dos-columnas:has(> .detalle:not([hidden])){grid-template-columns:minmax(0,1fr)}
   .c-vistas{justify-content:space-between;order:3;flex-basis:100%}
   .c-vistas button{padding:8px 6px;font-size:.88rem}
   .grilla{grid-template-columns:minmax(0,1fr)}
+}
+
+/* En el teléfono: las vistas en una grilla de tres, y las tablas como fichas. */
+@media (max-width:560px){
+  .c-vistas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;border-bottom:0}
+  .c-vistas button{border:1px solid var(--line);border-radius:7px;padding:7px 4px}
+  .c-vistas button[aria-selected="true"]{border-color:var(--accent);background:var(--panel)}
+  .c-cabecera{align-items:flex-start}
+  .corrida{grid-template-columns:auto minmax(0,1fr)}
+  .corrida .meta{grid-column:1/-1;text-align:left}
+  .corrida-enlace{display:none}
+  .proyectos thead{display:none}
+  .proyectos tr{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .proyectos tr:last-child{border-bottom:0}
+  .proyectos td{border:0;padding:2px 0}
+  .proyectos td:first-child,.proyectos td.sitio-celda{grid-column:1/-1}
+  .proyectos td.num{text-align:left}
+  .proyectos td.num::before{content:attr(data-rotulo) " ";color:var(--muted);font-size:.78rem}
+  .proyectos .sitio-celda{min-width:0}
+  .resumen{padding:12px 14px;gap:10px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cargando::before,.nivel.curso::before,.fases li.actual{animation:none}
+}
+
+/* El nombre de un sitio abre el sitio. Se ve como texto hasta pasar por encima. Va también
+   con `.control a` adelante porque esa regla, más específica, lo pintaba de azul. */
+.sitio-link,
+.control a.sitio-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sitio-link:hover,
+.sitio-link:focus-visible,
+.control a.sitio-link:hover,
+.control a.sitio-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
